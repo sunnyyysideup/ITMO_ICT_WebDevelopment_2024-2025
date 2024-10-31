@@ -7,35 +7,48 @@ HOST = 'localhost'
 PORT = 8080
 grades = []
 
+
 def handler(sock):
-    request = sock.recv(1024).decode()
-    headers, body = parse_request(request)
-    method = headers[0].split(' ')[0]
+    try:
+        request = sock.recv(1024).decode()
+        if not request:
+            return
+        headers, body = parse_request(request)
+        method = headers[0].split(' ')[0]
 
-    print(f"New {method}")
+        print(f"New {method}")
 
-    if method == 'GET':
-        handle_get(sock)
-    elif method == 'POST':
-        handle_post(sock, body)
+        if method == 'GET':
+            handle_get(sock)
+        elif method == 'POST':
+            handle_post(sock, body)
 
-    sock.close()
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        sock.close()
+
 
 def parse_request(request):
-    # Разделение заголовков и тела запроса
+    # Разделяем заголовки и тело запроса
     parts = request.split('\r\n\r\n')
     headers = parts[0].split('\r\n')
     body = parts[1] if len(parts) > 1 else ''
     return headers, body
 
+
 def handle_get(sock):
     response_body = generate_html()
+
+    # Добавляем Content-Length, чтобы указать длину тела ответа
     response = f"""HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
 Content-Length: {len(response_body)}
 
 {response_body}"""
+
     sock.sendall(response.encode())
+
 
 def handle_post(sock, body):
     params = parse_post_data(body)
@@ -49,14 +62,16 @@ def handle_post(sock, body):
         else:
             grades.append({'discipline': discipline, 'grade': grade})
 
-    # Перенаправление на главную страницу после POST-запроса
+    # Перенаправляем на главную страницу после POST-запроса
     response = """HTTP/1.1 302 Found
 Location: /
+Content-Length: 0
+
 """
     sock.sendall(response.encode())
 
+
 def generate_html():
-    # Генерация HTML-кода
     html = """<!DOCTYPE html>
 <html>
 <head>
@@ -145,16 +160,19 @@ def generate_html():
 </html>"""
     return html
 
+
 def parse_post_data(data):
-    # Разбор данных POST-запроса
+    # Разбираем данные POST-запроса
     params = {}
     pairs = data.split('&')
     for pair in pairs:
-        key, value = pair.split('=')
-        params[key] = urllib.parse.unquote(value)
+        if '=' in pair:
+            key, value = pair.split('=', 1)
+            params[key] = urllib.parse.unquote(value)
     return params
 
-# Настройка сервера
+
+# Настраиваем сервер
 serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 serv.bind((HOST, PORT))
 

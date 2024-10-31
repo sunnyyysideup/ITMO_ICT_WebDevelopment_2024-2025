@@ -7,6 +7,8 @@ nav:
       - Задание 3: lr_1/task3.md
       - Задание 4: lr_1/task4.md
       - Задание 5: lr_1/task5.md
+  - Лабораторная работа 2:
+      - Сайт со списком научных конференций: lr_2/main.md
 
 theme:
   name: material

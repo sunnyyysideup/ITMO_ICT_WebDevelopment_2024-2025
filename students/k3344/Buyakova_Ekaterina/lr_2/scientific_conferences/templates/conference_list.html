@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="centered-heading">Conference List</h1>
+<div class="conference-list">
+    {% for conference in conferences %}
+        <div class="conference-item">
+            <a href="{% url 'conference_detail' conference_id=conference.id %}">
+                {{ conference.title }}
+            </a>
+        </div>
+    {% endfor %}
+</div>
+
+<style>
+    .centered-heading {
+        text-align: center;
+    }
+
+    .conference-list {
+        border: 2px solid #d7ccc8;
+        padding: 10px;
+        border-radius: 8px;
+        background-color: #f9f9f9;
+        max-width: 600px;
+        margin: 20px auto;
+    }
+
+    .conference-item {
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .conference-item:last-child {
+        border-bottom: none;
+    }
+
+    .conference-item a {
+        color: #333;
+        text-decoration: none;
+        font-weight: bold;
+    }
+
+    .conference-item a:hover {
+        text-decoration: underline;
+        color: #d7ccc8;
+    }
+</style>
+
+{% endblock %}
