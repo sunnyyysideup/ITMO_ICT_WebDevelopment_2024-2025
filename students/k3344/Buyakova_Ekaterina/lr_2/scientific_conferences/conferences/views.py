@@ -8,10 +8,30 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from .forms import RegistrationForm
 from django.urls import reverse
+from django.views.generic import ListView
+from django.db.models import Q
+from django.core.paginator import Paginator
 
-def conference_list(request):
-    conferences = Conference.objects.all()
-    return render(request, 'conference_list.html', {'conferences': conferences})
+
+class ConferenceListView(ListView):
+    model = Conference
+    template_name = 'conference_list.html'
+    context_object_name = 'conferences'
+    paginate_by = 2
+
+    def get_queryset(self):
+        query = self.request.GET.get('q')
+        queryset = Conference.objects.all()
+        if query:
+            queryset = queryset.filter(Q(title__icontains=query) | Q(topics__icontains=query))
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        query_params = self.request.GET.copy()
+        query_params.pop('page', None)
+        context['query'] = query_params.urlencode()
+        return context
 
 
 def conference_detail(request, conference_id):
@@ -63,7 +83,24 @@ def add_review(request, conference_id):
 
 def participant_list(request):
     registrations = Registration.objects.select_related('conference', 'user').all()
-    return render(request, 'participant_list.html', {'registrations': registrations})
+
+    query = request.GET.get('q', '')
+    if query:
+        registrations = registrations.filter(
+            Q(conference__title__icontains=query) |
+            Q(user__username__icontains=query) |
+            Q(presentation_topic__icontains=query)
+        )
+
+    paginator = Paginator(registrations, 3)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'registrations': page_obj,
+        'query': query
+    }
+    return render(request, 'participant_list.html', context)
 
 
 def register(request):
